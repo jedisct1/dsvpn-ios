@@ -1,0 +1,21 @@
+.build/
+.DS_Store
+.swival/
+*.swp
+*.xcodeproj/
+*.xcworkspace/
+Derived/
+*.xcscmblueprint
+*.xcuserstate
+*~
+\#*\#
+# Development artifacts
+# OS
+# SwiftPM
+# Xcode
+build/
+DerivedData/
+LOG.md
+Package.resolved
+tmp/
+xcuserdata/
