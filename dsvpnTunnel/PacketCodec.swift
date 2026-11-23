@@ -50,7 +50,7 @@ class PacketCodec {
     /// On `.corrupted`, the cipher state is desynchronized (uc_decrypt advances
     /// state even on failure). The caller MUST tear down this connection and
     /// reconnect — continuing to decode will produce garbage. This matches
-    /// upstream vpn.c:446-449 which reconnects on decrypt failure.
+    /// upstream vpn.c:466-472 which reconnects on decrypt failure.
     func decode(_ data: Data) -> DecodeResult {
         reassemblyBuffer.append(contentsOf: data)
         var packets = [Data]()

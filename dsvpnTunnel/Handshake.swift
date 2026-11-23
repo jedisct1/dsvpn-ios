@@ -14,7 +14,7 @@ enum HandshakeError: Error {
 enum Handshake {
     /// Derive the key exchange state from the raw 32-byte PSK.
     /// This is the first thing that happens — the raw key is never used directly.
-    /// Matches vpn.c:503: uc_state_init(uc_kx_st, key, "VPN Key Exchange")
+    /// Matches vpn.c:526: uc_state_init(uc_kx_st, key, "VPN Key Exchange")
     static func deriveKXState(from key: [UInt8]) -> [UInt32] {
         precondition(key.count == DSVPNConstants.keyLength)
         var state = [UInt32](repeating: 0, count: 12)

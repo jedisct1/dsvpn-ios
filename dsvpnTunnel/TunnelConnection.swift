@@ -31,8 +31,8 @@ final class TunnelConnection {
     private var codec: PacketCodec?
     private var kxState: [UInt32]
 
-    private var congestion = false
     private var outstandingBytes = 0
+    private var tunReaderPaused = false
     private var isRunning = false
     private var shouldReconnect = false
     private var reconnectTask: Task<Void, Never>?
@@ -156,7 +156,7 @@ final class TunnelConnection {
         connection = nil
         codec = nil
         outstandingBytes = 0
-        congestion = false
+        tunReaderPaused = false
     }
 
     private func reconnect() {
@@ -263,18 +263,15 @@ final class TunnelConnection {
                 }
 
                 for packet in packets {
-                    if self.congestion {
-                        self.congestion = false
-                        continue
-                    }
-
                     let encrypted = codec.encode(packet)
                     let byteCount = encrypted.count
                     self.outstandingBytes += byteCount
 
                     conn.send(content: encrypted, completion: .contentProcessed { [weak self] error in
                         DispatchQueue.main.async {
-                            guard let self else { return }
+                            // Sends that were still queued on a connection we already dropped
+                            // must not be counted against the one that replaced it.
+                            guard let self, conn === self.connection else { return }
                             self.outstandingBytes -= byteCount
                             if let error {
                                 dlog("TCP send error: \(error)")
@@ -282,20 +279,31 @@ final class TunnelConnection {
                                     .tcpConnectFailed, detail: "TCP send: \(error.localizedDescription)"
                                 )
                                 self.reconnect()
+                                return
                             }
+                            self.resumeTUNReaderIfDrained()
                         }
                     })
-
-                    guard self.isRunning else { return }
-
-                    if self.outstandingBytes > DSVPNConstants.notsentLowat {
-                        self.congestion = true
-                    }
                 }
 
-                self.startTUNReader()
+                // While the outer connection is congested, stop reading from the tunnel
+                // instead of dropping packets ourselves.
+                // Packets then queue up and get dropped at the interface,
+                // which is what the inner congestion controllers react to.
+                // Same behavior as upstream since dsvpn 1.0.0.
+                if self.outstandingBytes > DSVPNConstants.notsentLowat {
+                    self.tunReaderPaused = true
+                } else {
+                    self.startTUNReader()
+                }
             }
         }
+    }
+
+    private func resumeTUNReaderIfDrained() {
+        guard tunReaderPaused, outstandingBytes <= DSVPNConstants.notsentLowat else { return }
+        tunReaderPaused = false
+        startTUNReader()
     }
 
     // MARK: - TCP → TUN (inbound)
