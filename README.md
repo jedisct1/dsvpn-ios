@@ -4,6 +4,10 @@ An iOS client for [dsvpn](https://github.com/jedisct1/dsvpn), a Dead Simple VPN 
 
 It connects your iPhone or iPad to a dsvpn server so that all your traffic is routed through it. This is useful when you are on an untrusted or restricted network where only TCP traffic is allowed.
 
+<p align="center">
+  <img src=".media/screenshot.png" width="620" alt="The profile list with the Connect button, and the details of a profile">
+</p>
+
 ## What you need
 
 You need a `dsvpn` server already running somewhere. The server setup is covered in the [dsvpn documentation](https://github.com/jedisct1/dsvpn). In short, you run a single command on a Linux or macOS machine and you are done.
